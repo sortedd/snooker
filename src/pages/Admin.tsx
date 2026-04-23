@@ -114,15 +114,41 @@ function MatchEditor({ match, players, onAddGame, onSaveVideo }: any) {
       {/* Current Score Display */}
       {p1 && p2 && (
         <div className="bg-dark-surface p-3 rounded-lg border border-glass-border">
-          <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center justify-between text-sm mb-2">
             <span className={`font-bold ${match.scoreP1 > match.scoreP2 ? 'text-neon-blue' : 'text-gray-400'}`}>
-              {p1.name}: {match.scoreP1}
+              {p1.name}: {match.scoreP1} frame{match.scoreP1 !== 1 ? 's' : ''}
             </span>
             <span className="text-gray-500 text-xs">VS</span>
             <span className={`font-bold ${match.scoreP2 > match.scoreP1 ? 'text-neon-blue' : 'text-gray-400'}`}>
-              {p2.name}: {match.scoreP2}
+              {p2.name}: {match.scoreP2} frame{match.scoreP2 !== 1 ? 's' : ''}
             </span>
           </div>
+          {/* Progress bar to show how close to winning */}
+          {!isMatchComplete && (
+            <div className="mt-2">
+              <div className="text-[10px] text-gray-500 mb-1">First to 2 frames wins:</div>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <div className="text-[10px] text-gray-400 mb-1">{p1.name} needs {2 - match.scoreP1} more</div>
+                  <div className="h-2 bg-black rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-neon-blue transition-all duration-300" 
+                      style={{ width: `${(match.scoreP1 / 2) * 100}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <div className="text-[10px] text-gray-400 mb-1">{p2.name} needs {2 - match.scoreP2} more</div>
+                  <div className="h-2 bg-black rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-purple-500 transition-all duration-300" 
+                      style={{ width: `${(match.scoreP2 / 2) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -33,9 +33,9 @@ function MatchNode({ match, players, isFinal }: { match?: Match, players: Player
           {isWinner && <span className="text-[8px] text-neon-green ml-1">✓</span>}
         </div>
         <span className={cn(
-          "text-xs font-mono tracking-tighter font-bold w-4 text-center shrink-0", 
-          isWinner ? "text-white text-sm" : "text-gray-500"
-        )}>
+          "text-xs font-mono tracking-tighter font-bold w-6 text-center shrink-0", 
+          isWinner ? "text-white text-base" : score > 0 ? "text-neon-blue" : "text-gray-500"
+        )} title={score > 0 ? `${score} frame${score !== 1 ? 's' : ''} won` : ''}>
           {score !== undefined && (match.status === 'completed' || score > 0) ? score : '-'}
         </span>
       </div>
@@ -80,7 +80,10 @@ function MatchNode({ match, players, isFinal }: { match?: Match, players: Player
       )}
       
       {/* Status indicators */}
-      {match.status === 'pending' && match.player1Id && match.player2Id && (
+      {match.status === 'pending' && match.player1Id && match.player2Id && match.games.length > 0 && (
+         <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.8)] z-20" title="In Progress" />
+      )}
+      {match.status === 'pending' && match.player1Id && match.player2Id && match.games.length === 0 && (
          <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.8)] z-20" title="Upcoming" />
       )}
       {match.status === 'completed' && (
