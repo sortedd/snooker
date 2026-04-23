@@ -16,14 +16,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'GET') {
       console.log('📥 GET /api/tournament - Fetching data');
       
-      const data = await kv.get('tournament-data');
-      console.log('Data from KV:', data ? 'Found' : 'Not found');
-      
-      if (data) {
-        return res.status(200).json(JSON.parse(data as string));
+      try {
+        const data = await kv.get('tournament-data');
+        console.log('Data from KV:', data ? `Found (${typeof data})` : 'Not found');
+        console.log('Raw data:', data);
+        
+        if (data) {
+          // Handle both string and object cases
+          const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+          console.log('Parsed data keys:', Object.keys(parsed));
+          return res.status(200).json(parsed);
+        }
+      } catch (kvError) {
+        console.error('❌ KV.get() error:', kvError);
+        console.error('Error message:', kvError instanceof Error ? kvError.message : String(kvError));
+        console.error('Error stack:', kvError instanceof Error ? kvError.stack : 'N/A');
       }
       
-      // Return null if no data (client will use initial data)
+      // Return null if no data or error (client will use initial data)
       return res.status(200).json({ players: null, matches: null });
     }
 
