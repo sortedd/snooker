@@ -80,10 +80,10 @@ function MatchNode({ match, players, isFinal }: { match?: Match, players: Player
       )}
       
       {/* Status indicators */}
-      {match.status === 'pending' && match.player1Id && match.player2Id && match.games.length > 0 && (
+      {match.status === 'pending' && match.player1Id && match.player2Id && match.games && match.games.length > 0 && (
          <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.8)] z-20" title="In Progress" />
       )}
-      {match.status === 'pending' && match.player1Id && match.player2Id && match.games.length === 0 && (
+      {match.status === 'pending' && match.player1Id && match.player2Id && (!match.games || match.games.length === 0) && (
          <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.8)] z-20" title="Upcoming" />
       )}
       {match.status === 'completed' && (

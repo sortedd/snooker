@@ -72,9 +72,17 @@ const saveToCloud = async (players: Player[], matches: Match[]) => {
 const loadFromStorage = async () => {
   // Try cloud first
   const cloudData = await fetchFromCloud();
-  if (cloudData) {
+  if (cloudData && cloudData.players && cloudData.matches) {
     console.log('✅ Loaded from cloud (JSONBin)');
-    return cloudData;
+    // Ensure games array exists for all matches
+    const matchesWithGames = cloudData.matches.map((m: any) => ({
+      ...m,
+      games: m.games || []
+    }));
+    return {
+      players: cloudData.players,
+      matches: matchesWithGames
+    };
   }
   
   // Fallback to localStorage
@@ -83,9 +91,14 @@ const loadFromStorage = async () => {
     if (saved) {
       const parsed = JSON.parse(saved);
       console.log('✅ Loaded from localStorage (fallback)');
+      // Ensure games array exists for all matches
+      const matchesWithGames = (parsed.matches || initialMatches).map((m: any) => ({
+        ...m,
+        games: m.games || []
+      }));
       return {
         players: parsed.players || initialPlayers,
-        matches: parsed.matches || initialMatches
+        matches: matchesWithGames
       };
     }
   } catch (e) {
@@ -95,7 +108,7 @@ const loadFromStorage = async () => {
   console.log('✅ Using initial data');
   return {
     players: initialPlayers,
-    matches: [...initialMatches]
+    matches: initialMatches.map(m => ({ ...m, games: m.games || [] }))
   };
 };
 
