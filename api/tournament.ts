@@ -2,10 +2,22 @@ import { kv } from '@vercel/kv';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   try {
     // GET - Fetch tournament data
     if (req.method === 'GET') {
+      console.log('📥 GET /api/tournament - Fetching data');
+      
       const data = await kv.get('tournament-data');
+      console.log('Data from KV:', data ? 'Found' : 'Not found');
       
       if (data) {
         return res.status(200).json(JSON.parse(data as string));
@@ -17,19 +29,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // POST/PUT - Save tournament data
     if (req.method === 'POST' || req.method === 'PUT') {
+      console.log('💾 POST /api/tournament - Saving data');
       const { players, matches } = req.body;
       
+      console.log('Received:', { playersCount: players?.length, matchesCount: matches?.length });
+      
       if (!players || !matches) {
+        console.error('Missing players or matches in request body');
         return res.status(400).json({ error: 'Missing players or matches' });
       }
 
       await kv.set('tournament-data', JSON.stringify({ players, matches }));
+      console.log('✅ Data saved to KV successfully');
       
       return res.status(200).json({ success: true });
     }
 
     // DELETE - Reset tournament
     if (req.method === 'DELETE') {
+      console.log('🗑️ DELETE /api/tournament - Clearing data');
       await kv.del('tournament-data');
       return res.status(200).json({ success: true });
     }
@@ -37,6 +55,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (error) {
     console.error('KV Error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ 
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 }
