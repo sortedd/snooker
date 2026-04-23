@@ -72,8 +72,14 @@ const saveToCloud = async (players: Player[], matches: Match[]) => {
 const loadFromStorage = async () => {
   // Try cloud first
   const cloudData = await fetchFromCloud();
-  if (cloudData && cloudData.players && cloudData.matches) {
-    console.log('✅ Loaded from cloud (JSONBin)');
+  
+  // Check if cloud data has proper tournament structure (16 players, 15 matches)
+  const hasValidTournamentData = cloudData && 
+    cloudData.players && cloudData.players.length >= 16 && 
+    cloudData.matches && cloudData.matches.length >= 15;
+  
+  if (hasValidTournamentData) {
+    console.log('✅ Loaded full tournament from cloud (JSONBin)');
     // Ensure games array exists for all matches
     const matchesWithGames = cloudData.matches.map((m: any) => ({
       ...m,
@@ -85,27 +91,34 @@ const loadFromStorage = async () => {
     };
   }
   
+  console.log('⚠️ Cloud data incomplete, checking localStorage...');
+  
   // Fallback to localStorage
   try {
     const saved = localStorage.getItem('snooker-tournament');
     if (saved) {
       const parsed = JSON.parse(saved);
-      console.log('✅ Loaded from localStorage (fallback)');
-      // Ensure games array exists for all matches
-      const matchesWithGames = (parsed.matches || initialMatches).map((m: any) => ({
-        ...m,
-        games: m.games || []
-      }));
-      return {
-        players: parsed.players || initialPlayers,
-        matches: matchesWithGames
-      };
+      const hasValidLocalData = parsed.players && parsed.players.length >= 16 && 
+                                parsed.matches && parsed.matches.length >= 15;
+      
+      if (hasValidLocalData) {
+        console.log('✅ Loaded from localStorage (fallback)');
+        // Ensure games array exists for all matches
+        const matchesWithGames = (parsed.matches || initialMatches).map((m: any) => ({
+          ...m,
+          games: m.games || []
+        }));
+        return {
+          players: parsed.players || initialPlayers,
+          matches: matchesWithGames
+        };
+      }
     }
   } catch (e) {
     console.error('Failed to load from localStorage:', e);
   }
   
-  console.log('✅ Using initial data');
+  console.log('✅ Using initial tournament data');
   return {
     players: initialPlayers,
     matches: initialMatches.map(m => ({ ...m, games: m.games || [] }))
