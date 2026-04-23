@@ -237,27 +237,27 @@ function MatchEditor({ match, players, onAddGame, onSaveVideo }: any) {
               <span className="text-[10px] text-gray-400">Enter scores, then click winner</span>
             </div>
             
-            <div className="grid grid-cols-5 items-center gap-4 mb-3">
-              <div className="col-span-2 flex flex-col gap-1 items-end text-right">
+            <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mb-3">
+              <div className="flex-1 flex flex-col gap-1 items-center sm:items-end text-center sm:text-right w-full">
                 <span className="font-medium text-sm truncate w-full">{p1.name}</span>
                 <input 
                   type="number" 
                   min="0" 
                   value={frameScoreP1} 
                   onChange={e => setFrameScoreP1(Number(e.target.value))} 
-                  className="w-20 bg-black border border-glass-border rounded p-2 text-center text-lg font-bold focus:border-neon-blue focus:outline-none" 
+                  className="w-full sm:w-20 bg-black border border-glass-border rounded p-2 text-center text-lg font-bold focus:border-neon-blue focus:outline-none" 
                   placeholder="0"
                 />
               </div>
-              <div className="col-span-1 text-center text-gray-600 text-sm font-bold">VS</div>
-              <div className="col-span-2 flex flex-col gap-1 items-start">
+              <div className="text-center text-gray-600 text-sm font-bold py-2">VS</div>
+              <div className="flex-1 flex flex-col gap-1 items-center sm:items-start text-center sm:text-left w-full">
                 <span className="font-medium text-sm truncate w-full">{p2.name}</span>
                 <input 
                   type="number" 
                   min="0" 
                   value={frameScoreP2} 
                   onChange={e => setFrameScoreP2(Number(e.target.value))} 
-                  className="w-20 bg-black border border-glass-border rounded p-2 text-center text-lg font-bold focus:border-neon-blue focus:outline-none" 
+                  className="w-full sm:w-20 bg-black border border-glass-border rounded p-2 text-center text-lg font-bold focus:border-neon-blue focus:outline-none" 
                   placeholder="0"
                 />
               </div>

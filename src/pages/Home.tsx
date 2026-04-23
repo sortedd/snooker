@@ -2,6 +2,7 @@ import { useTournamentStore } from '../store/useTournamentStore';
 import { motion } from 'motion/react';
 import { Play, TrendingUp, Calendar, Trophy, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { InteractiveHero } from '../components/InteractiveHero';
 
 export function Home() {
   const { matches, players } = useTournamentStore();
@@ -34,81 +35,8 @@ export function Home() {
 
   return (
     <div className="flex-1 w-full max-w-[2000px] mx-auto pb-20">
-      {/* Hero Section */}
-      <section className="relative w-full min-h-[75svh] md:min-h-[60vh] max-h-[85vh] bg-black overflow-hidden flex flex-col justify-end">
-        {/* Ambient 4K Cinematic Snooker Background (Replaces fragile YouTube iframe) */}
-        <div className="absolute inset-0 w-full h-full overflow-hidden bg-black">
-          <motion.div
-            animate={{ 
-              scale: [1, 1.05, 1],
-              x: ['0%', '-1%', '0%'],
-              y: ['0%', '1%', '0%']
-            }}
-            transition={{ duration: 25, ease: "linear", repeat: Infinity }}
-            className="absolute inset-0 w-full h-full"
-          >
-            <div 
-              className="absolute inset-0 w-full h-full bg-cover bg-center opacity-60"
-              style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1615886616086-4f40f0c05b82?q=80&w=2940&auto=format&fit=crop)' }}
-            />
-          </motion.div>
-          {/* Subtle vignette and gradient overlays for that "Sexy" dark broadcast look */}
-          <div className="absolute inset-0 bg-gradient-to-t from-dark-bg via-dark-bg/80 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-dark-bg/90 via-dark-bg/20 to-transparent" />
-          <div className="absolute inset-0 bg-neon-blue/5 mix-blend-overlay" />
-        </div>
-
-        <div className="relative z-10 p-6 sm:p-8 md:p-12 lg:p-20 max-w-7xl mx-auto w-full mb-8 md:mb-0">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="flex flex-col gap-4 max-w-2xl"
-          >
-            <div className="flex items-center gap-3">
-              <span className="px-3 py-1 text-xs font-bold uppercase tracking-widest bg-neon-blue/20 text-neon-blue border border-neon-blue/40 rounded-full backdrop-blur-md flex items-center gap-2">
-                <Play className="w-3 h-3 fill-current" />
-                {featuredMatch.videoUrls && featuredMatch.videoUrls.length > 0 ? 'Featured Video' : 'Featured Match'}
-              </span>
-              {featuredMatch.videoUrls && featuredMatch.videoUrls.length > 0 && (
-                <span className="px-2 py-1 text-xs font-bold text-black bg-neon-blue rounded-full">
-                  {featuredMatch.videoUrls.length} VIDEO{featuredMatch.videoUrls.length > 1 ? 'S' : ''}
-                </span>
-              )}
-              <span className="text-gray-400 text-sm font-medium flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                {new Date(featuredMatch.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-              </span>
-            </div>
-            
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-sans font-black italic uppercase tracking-tighter leading-[0.9]">
-              <span className="block">{p1?.name || 'TBD'}</span>
-              <span className="block text-neon-blue my-2 text-3xl md:text-4xl">VS</span>
-              <span className="block">{p2?.name || 'TBD'}</span>
-            </h1>
-            
-            <p className="text-base sm:text-lg md:text-xl text-gray-300 font-light mt-2">
-              {featuredMatch.round}
-            </p>
-
-            <div className="flex flex-wrap gap-4 mt-6">
-              <Link
-                to={`/match/${featuredMatch.id}`}
-                className="flex items-center gap-2 bg-white text-black px-8 py-4 rounded-full font-bold uppercase tracking-wide hover:bg-neon-blue hover:text-white transition-all transform hover:scale-105"
-              >
-                <Play className="w-5 h-5 fill-current" />
-                Watch Now
-              </Link>
-              <Link
-                to="/bracket"
-                className="flex items-center gap-2 glass-panel text-white px-8 py-4 rounded-full font-bold uppercase tracking-wide hover:bg-white/10 transition-all"
-              >
-                View Bracket
-              </Link>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+      {/* Interactive Hero Section */}
+      <InteractiveHero />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
         
