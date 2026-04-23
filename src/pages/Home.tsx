@@ -6,18 +6,31 @@ import { Link } from 'react-router-dom';
 export function Home() {
   const { matches, players } = useTournamentStore();
   
-  // Find the latest active or completed match with a video
-  const featuredMatch = [...matches].reverse().find(m => m.videoUrls && m.videoUrls.length > 0) || matches[0];
+  // Priority 1: Latest match with video (live or completed)
+  // Priority 2: Any match with video
+  // Priority 3: Latest match overall
+  const matchesWithVideos = matches.filter(m => m.videoUrls && m.videoUrls.length > 0);
+  const featuredMatch = matchesWithVideos.length > 0 
+    ? matchesWithVideos[matchesWithVideos.length - 1] // Get the latest one
+    : matches[0];
   
   const getPlayer = (id: string | null) => players.find(p => p.id === id);
   const p1 = getPlayer(featuredMatch.player1Id);
   const p2 = getPlayer(featuredMatch.player2Id);
 
-  // Upcoming matches
-  const upcomingMatches = matches.filter(m => m.status === 'pending' && m.player1Id && m.player2Id).slice(0, 3);
+  // Upcoming matches (without videos)
+  const upcomingMatches = matches
+    .filter(m => m.status === 'pending' && m.player1Id && m.player2Id && (!m.videoUrls || m.videoUrls.length === 0))
+    .slice(0, 3);
   
   // ALL completed matches - show them prominently
   const completedMatches = matches.filter(m => m.status === 'completed').reverse();
+  
+  // Recommended matches with videos (for sidebar)
+  const recommendedMatches = matchesWithVideos
+    .filter(m => m.id !== featuredMatch.id)
+    .reverse()
+    .slice(0, 5);
 
   return (
     <div className="flex-1 w-full max-w-[2000px] mx-auto pb-20">
@@ -53,9 +66,15 @@ export function Home() {
             className="flex flex-col gap-4 max-w-2xl"
           >
             <div className="flex items-center gap-3">
-              <span className="px-3 py-1 text-xs font-bold uppercase tracking-widest bg-neon-blue/20 text-neon-blue border border-neon-blue/40 rounded-full backdrop-blur-md">
-                Featured Match
+              <span className="px-3 py-1 text-xs font-bold uppercase tracking-widest bg-neon-blue/20 text-neon-blue border border-neon-blue/40 rounded-full backdrop-blur-md flex items-center gap-2">
+                <Play className="w-3 h-3 fill-current" />
+                {featuredMatch.videoUrls && featuredMatch.videoUrls.length > 0 ? 'Featured Video' : 'Featured Match'}
               </span>
+              {featuredMatch.videoUrls && featuredMatch.videoUrls.length > 0 && (
+                <span className="px-2 py-1 text-xs font-bold text-black bg-neon-blue rounded-full">
+                  {featuredMatch.videoUrls.length} VIDEO{featuredMatch.videoUrls.length > 1 ? 'S' : ''}
+                </span>
+              )}
               <span className="text-gray-400 text-sm font-medium flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
                 {new Date(featuredMatch.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
@@ -230,6 +249,70 @@ export function Home() {
               </div>
             )}
           </div>
+          
+          {/* Recommended Videos Section */}
+          {recommendedMatches.length > 0 && (
+            <>
+              <div className="flex items-center justify-between pt-4">
+                <h2 className="text-2xl font-display font-bold uppercase flex items-center gap-2 text-white">
+                  <Play className="text-neon-blue w-6 h-6 fill-current" /> Recommended Videos
+                </h2>
+                <Link to="/matches" className="text-sm font-medium text-neon-blue hover:text-white flex items-center gap-1 transition-colors">
+                  View All <ChevronRight className="w-4 h-4" />
+                </Link>
+              </div>
+              
+              <div className="space-y-3">
+                {recommendedMatches.map((match) => {
+                  const rp1 = getPlayer(match.player1Id);
+                  const rp2 = getPlayer(match.player2Id);
+                  
+                  return (
+                    <Link
+                      key={match.id}
+                      to={`/match/${match.id}`}
+                      className="block glass-panel p-3 rounded-xl hover:bg-white/5 hover:border-neon-blue/30 transition-all group"
+                    >
+                      <div className="flex gap-3">
+                        {/* Thumbnail */}
+                        <div className="relative w-24 h-16 rounded-lg overflow-hidden shrink-0 bg-dark-surface">
+                          {rp1 && rp2 ? (
+                            <div className="flex h-full">
+                              <div className="w-1/2"><img src={rp1.image} className="w-full h-full object-cover" /></div>
+                              <div className="w-1/2"><img src={rp2.image} className="w-full h-full object-cover" /></div>
+                            </div>
+                          ) : (
+                            <div className="w-full h-full bg-dark-surface" />
+                          )}
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Play className="w-5 h-5 text-white fill-current" />
+                          </div>
+                          <div className="absolute bottom-1 right-1 bg-black/80 text-white text-[8px] px-1 rounded">
+                            {match.videoUrls?.length}
+                          </div>
+                        </div>
+                        
+                        {/* Info */}
+                        <div className="flex flex-col justify-between flex-1 min-w-0">
+                          <div>
+                            <div className="text-[10px] text-neon-green font-bold uppercase mb-1">{match.round}</div>
+                            <div className="text-sm font-semibold truncate">
+                              {rp1?.name || 'TBD'} vs {rp2?.name || 'TBD'}
+                            </div>
+                          </div>
+                          {match.status === 'completed' && (
+                            <div className="text-xs text-gray-400">
+                              Score: {match.scoreP1} - {match.scoreP2}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
 
       </div>
