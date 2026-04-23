@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { initialMatches, initialPlayers, Match, Player, GameScore } from '../data/initialData';
+import { JSONBIN_CONFIG } from '../lib/tournamentSync';
 
 interface TournamentState {
   players: Player[];
@@ -11,12 +12,58 @@ interface TournamentState {
   lastUpdated: number;
 }
 
-// Load from localStorage or use initial data
-const loadFromStorage = () => {
+// Fetch from JSONBin (cloud storage)
+const fetchFromCloud = async (): Promise<{ players: Player[]; matches: Match[] } | null> => {
+  try {
+    const response = await fetch(`${JSONBIN_CONFIG.BASE_URL}/${JSONBIN_CONFIG.BIN_ID}/latest`, {
+      method: 'GET',
+      headers: {
+        'X-Master-Key': JSONBIN_CONFIG.API_KEY
+      }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      // JSONBin v3 wraps data in 'record' property
+      return data.record || null;
+    }
+  } catch (e) {
+    console.error('Failed to fetch from JSONBin:', e);
+  }
+  return null;
+};
+
+// Save to JSONBin (cloud storage)
+const saveToCloud = async (players: Player[], matches: Match[]) => {
+  try {
+    await fetch(`${JSONBIN_CONFIG.BASE_URL}/${JSONBIN_CONFIG.BIN_ID}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': JSONBIN_CONFIG.API_KEY
+      },
+      body: JSON.stringify({ players, matches })
+    });
+  } catch (e) {
+    console.error('Failed to save to JSONBin:', e);
+  }
+};
+
+// Load from cloud (JSONBin) or fallback to localStorage or use initial data
+const loadFromStorage = async () => {
+  // Try cloud first
+  const cloudData = await fetchFromCloud();
+  if (cloudData) {
+    console.log('✅ Loaded from cloud (JSONBin)');
+    return cloudData;
+  }
+  
+  // Fallback to localStorage
   try {
     const saved = localStorage.getItem('snooker-tournament');
     if (saved) {
       const parsed = JSON.parse(saved);
+      console.log('✅ Loaded from localStorage (fallback)');
       return {
         players: parsed.players || initialPlayers,
         matches: parsed.matches || initialMatches
@@ -25,6 +72,8 @@ const loadFromStorage = () => {
   } catch (e) {
     console.error('Failed to load from localStorage:', e);
   }
+  
+  console.log('✅ Using initial data');
   return {
     players: initialPlayers,
     matches: [...initialMatches]
@@ -32,19 +81,38 @@ const loadFromStorage = () => {
 };
 
 const saveToStorage = (players: Player[], matches: Match[]) => {
+  // Save to localStorage (local backup)
   try {
     localStorage.setItem('snooker-tournament', JSON.stringify({ players, matches }));
   } catch (e) {
     console.error('Failed to save to localStorage:', e);
   }
+  
+  // Save to cloud (JSONBin) - async, fire and forget
+  saveToCloud(players, matches).catch(e => {
+    console.error('Failed to save to cloud:', e);
+  });
 };
 
 export const useTournamentStore = create<TournamentState>((set, get) => {
-  const initial = loadFromStorage();
+  // Initialize with empty state, will load async
+  const initialState = {
+    players: initialPlayers,
+    matches: [...initialMatches],
+    lastUpdated: Date.now()
+  };
+  
+  // Load data asynchronously
+  loadFromStorage().then((data) => {
+    set({
+      players: data.players,
+      matches: data.matches,
+      lastUpdated: Date.now()
+    });
+  });
   
   return {
-    players: initial.players,
-    matches: initial.matches,
+    ...initialState,
 
     addGameScore: (matchId, gameNumber, winnerId, scoreP1, scoreP2) => {
       set((state) => {
@@ -145,13 +213,27 @@ export const useTournamentStore = create<TournamentState>((set, get) => {
       });
     },
     
-    refreshData: () => {
+    refreshData: async () => {
+      // Fetch from cloud first
+      const cloudData = await fetchFromCloud();
+      if (cloudData) {
+        set({
+          players: cloudData.players,
+          matches: cloudData.matches,
+          lastUpdated: Date.now()
+        });
+        console.log('✅ Refreshed from cloud');
+        return;
+      }
+      
+      // Fallback to localStorage
       const updated = loadFromStorage();
       set({
-        players: updated.players,
-        matches: updated.matches,
+        players: (await updated).players,
+        matches: (await updated).matches,
         lastUpdated: Date.now()
       });
+      console.log('✅ Refreshed from localStorage');
     },
     
     lastUpdated: Date.now()

@@ -12,11 +12,11 @@ export function Layout() {
   const refreshData = useTournamentStore((state) => state.refreshData);
   const lastUpdated = useTournamentStore((state) => state.lastUpdated);
 
-  // Auto-refresh every 5 seconds to sync data across devices
+  // Auto-refresh every 3 seconds to sync data across devices (cloud sync)
   useEffect(() => {
     const interval = setInterval(() => {
       refreshData();
-    }, 5000); // Refresh every 5 seconds
+    }, 3000); // Refresh every 3 seconds (faster for cloud sync)
     
     return () => clearInterval(interval);
   }, [refreshData]);
