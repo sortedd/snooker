@@ -9,6 +9,7 @@ interface TournamentState {
   updateMatchVideos: (matchId: string, videoUrls: string[]) => void;
   resetTournament: () => void;
   refreshData: () => void;
+  isLoading: boolean;
   lastUpdated: number;
 }
 
@@ -41,7 +42,8 @@ const fetchFromCloud = async (): Promise<{ players: Player[]; matches: Match[] }
 };
 
 // Save to Vercel KV (ONLY cloud storage - no localStorage)
-const saveToCloud = async (players: Player[], matches: Match[]) => {
+// NOW RETURNS Promise so we can await it
+const saveToCloud = async (players: Player[], matches: Match[]): Promise<boolean> => {
   try {
     console.log('💾 Saving to Vercel KV...', { playersCount: players.length, matchesCount: matches.length });
     const response = await fetch(TOURNAMENT_API.BASE_URL, {
@@ -54,11 +56,14 @@ const saveToCloud = async (players: Player[], matches: Match[]) => {
     
     if (response.ok) {
       console.log('✅ Successfully saved to Vercel KV');
+      return true;
     } else {
       console.error('Failed to save to Vercel KV:', response.statusText);
+      return false;
     }
   } catch (e) {
     console.error('Failed to save to Vercel KV:', e);
+    return false;
   }
 };
 
@@ -98,20 +103,23 @@ const loadData = async () => {
 };
 
 export const useTournamentStore = create<TournamentState>((set, get) => {
-  // Initialize with empty state, will load async
+  // Start with loading state
   const initialState = {
     players: initialPlayers,
     matches: [...initialMatches],
+    isLoading: true,
     lastUpdated: Date.now()
   };
   
-  // Load data asynchronously from Vercel KV
+  // Load data from Vercel KV and update state
   loadData().then((data) => {
     set({
       players: data.players,
       matches: data.matches,
+      isLoading: false,
       lastUpdated: Date.now()
     });
+    console.log('✅ Tournament data loaded and state updated');
   });
   
   return {
@@ -184,16 +192,16 @@ export const useTournamentStore = create<TournamentState>((set, get) => {
             return p;
           });
 
-          // Save to Vercel KV
+          // Save to Vercel KV - fire and forget (state updates immediately)
           saveToCloud(updatedPlayers, updatedMatches);
           
-          return { matches: updatedMatches, players: updatedPlayers };
+          return { matches: updatedMatches, players: updatedPlayers, lastUpdated: Date.now() };
         }
 
-        // Save to Vercel KV
+        // Save to Vercel KV - fire and forget (state updates immediately)
         saveToCloud(state.players, updatedMatches);
         
-        return { matches: updatedMatches };
+        return { matches: updatedMatches, lastUpdated: Date.now() };
       });
     },
 
@@ -203,7 +211,7 @@ export const useTournamentStore = create<TournamentState>((set, get) => {
           m.id === matchId ? { ...m, videoUrls, status: m.status === 'pending' ? 'live' : m.status } : m
         );
         saveToCloud(state.players, updatedMatches);
-        return { matches: updatedMatches };
+        return { matches: updatedMatches, lastUpdated: Date.now() };
       });
     },
     
@@ -217,6 +225,7 @@ export const useTournamentStore = create<TournamentState>((set, get) => {
       set({
         players: initialPlayers,
         matches: [...initialMatches],
+        isLoading: false,
         lastUpdated: Date.now()
       });
     },
@@ -228,6 +237,7 @@ export const useTournamentStore = create<TournamentState>((set, get) => {
         set({
           players: cloudData.players,
           matches: cloudData.matches,
+          isLoading: false,
           lastUpdated: Date.now()
         });
         console.log('✅ Refreshed from Vercel KV');
@@ -237,6 +247,7 @@ export const useTournamentStore = create<TournamentState>((set, get) => {
       console.log('⚠️ No data in Vercel KV');
     },
     
+    isLoading: true,
     lastUpdated: Date.now()
   };
 });
