@@ -97,6 +97,49 @@ function MatchEditor({ match, players, onAddGame, onSaveVideo }: any) {
 
   const addVideo = () => setVidList([...vidList, '']);
   const removeVideo = (index: number) => setVidList(vidList.filter((_: any, i: any) => i !== index));
+  
+  // Delete a completed game (for corrections)
+  const deleteGame = (gameNumber: number) => {
+    if (!confirm(`Delete Game ${gameNumber}? This will recalculate the match score.`)) return;
+    
+    const updatedGames = match.games.filter((g: any) => g.gameNumber !== gameNumber);
+    // Renumber games
+    const renumberedGames = updatedGames.map((g: any, idx: number) => ({
+      ...g,
+      gameNumber: idx + 1
+    }));
+    
+    // Recalculate scores
+    const newScoreP1 = renumberedGames.filter((g: any) => g.winnerId === p1?.id).length;
+    const newScoreP2 = renumberedGames.filter((g: any) => g.winnerId === p2?.id).length;
+    const newWinnerId = newScoreP1 >= 2 ? p1?.id : newScoreP2 >= 2 ? p2?.id : null;
+    const newStatus = newWinnerId ? 'completed' : 'pending';
+    
+    // Update match using the store's direct state update
+    const updatedMatches = [...useTournamentStore.getState().matches];
+    const matchIndex = updatedMatches.findIndex((m: any) => m.id === match.id);
+    if (matchIndex !== -1) {
+      updatedMatches[matchIndex] = {
+        ...match,
+        games: renumberedGames,
+        scoreP1: newScoreP1,
+        scoreP2: newScoreP2,
+        winnerId: newWinnerId,
+        status: newStatus
+      };
+      
+      // Save directly to localStorage
+      const { players } = useTournamentStore.getState();
+      try {
+        localStorage.setItem('snooker-tournament', JSON.stringify({ players, matches: updatedMatches }));
+      } catch (e) {
+        console.error('Failed to save:', e);
+      }
+      
+      // Force reload to refresh state
+      window.location.reload();
+    }
+  };
 
   const gamesNeeded = 2 - match.scoreP1; // Games p1 needs to win
   const gamesNeededP2 = 2 - match.scoreP2; // Games p2 needs to win
@@ -155,11 +198,14 @@ function MatchEditor({ match, players, onAddGame, onSaveVideo }: any) {
       {/* Completed Games */}
       {match.games && match.games.length > 0 && (
         <div className="space-y-2">
-          <span className="text-xs text-gray-400 uppercase font-bold">Completed Games:</span>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400 uppercase font-bold">Completed Games:</span>
+            <span className="text-[10px] text-orange-400">Click X to delete & edit</span>
+          </div>
           {match.games.map((game: any) => {
             const gameWinner = game.winnerId === p1?.id ? p1 : game.winnerId === p2?.id ? p2 : null;
             return (
-              <div key={game.gameNumber} className="flex items-center gap-2 text-sm bg-black/30 p-2 rounded">
+              <div key={game.gameNumber} className="flex items-center gap-2 text-sm bg-black/30 p-2 rounded group">
                 <span className="text-xs font-bold text-gray-500">Game {game.gameNumber}:</span>
                 <span className={game.winnerId === p1?.id ? 'text-neon-blue font-bold' : 'text-gray-400'}>
                   {p1?.name} ({game.scoreP1})
@@ -169,6 +215,13 @@ function MatchEditor({ match, players, onAddGame, onSaveVideo }: any) {
                   {p2?.name} ({game.scoreP2})
                 </span>
                 {gameWinner && <Trophy className="w-3 h-3 text-neon-green ml-auto" />}
+                <button 
+                  onClick={() => deleteGame(game.gameNumber)}
+                  className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-400 font-bold px-2 transition-all"
+                  title="Delete this game"
+                >
+                  ✕
+                </button>
               </div>
             );
           })}
@@ -179,7 +232,10 @@ function MatchEditor({ match, players, onAddGame, onSaveVideo }: any) {
         <>
           {/* Add New Game */}
           <div className="border-t border-glass-border pt-4">
-            <span className="text-xs text-neon-green uppercase font-bold tracking-widest mb-3 block">Add Game Result:</span>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs text-neon-green uppercase font-bold tracking-widest block">Add Game {match.games.length + 1} Result:</span>
+              <span className="text-[10px] text-gray-400">Enter scores, then click winner</span>
+            </div>
             
             <div className="grid grid-cols-5 items-center gap-4 mb-3">
               <div className="col-span-2 flex flex-col gap-1 items-end text-right">
@@ -189,10 +245,11 @@ function MatchEditor({ match, players, onAddGame, onSaveVideo }: any) {
                   min="0" 
                   value={frameScoreP1} 
                   onChange={e => setFrameScoreP1(Number(e.target.value))} 
-                  className="w-16 bg-black border border-glass-border rounded p-1 text-center" 
+                  className="w-20 bg-black border border-glass-border rounded p-2 text-center text-lg font-bold focus:border-neon-blue focus:outline-none" 
+                  placeholder="0"
                 />
               </div>
-              <div className="col-span-1 text-center text-gray-600 text-sm">VS</div>
+              <div className="col-span-1 text-center text-gray-600 text-sm font-bold">VS</div>
               <div className="col-span-2 flex flex-col gap-1 items-start">
                 <span className="font-medium text-sm truncate w-full">{p2.name}</span>
                 <input 
@@ -200,7 +257,8 @@ function MatchEditor({ match, players, onAddGame, onSaveVideo }: any) {
                   min="0" 
                   value={frameScoreP2} 
                   onChange={e => setFrameScoreP2(Number(e.target.value))} 
-                  className="w-16 bg-black border border-glass-border rounded p-1 text-center" 
+                  className="w-20 bg-black border border-glass-border rounded p-2 text-center text-lg font-bold focus:border-neon-blue focus:outline-none" 
+                  placeholder="0"
                 />
               </div>
             </div>
@@ -208,32 +266,37 @@ function MatchEditor({ match, players, onAddGame, onSaveVideo }: any) {
             <div className="flex gap-2 mb-3">
               <button 
                 onClick={() => setSelectedWinner(p1.id)} 
-                className={`flex-1 py-2 rounded text-sm font-bold uppercase transition-colors ${
+                className={`flex-1 py-3 rounded-lg text-sm font-bold uppercase transition-all ${
                   selectedWinner === p1.id 
-                    ? 'bg-neon-blue text-black' 
-                    : 'bg-white/10 hover:bg-white/20'
+                    ? 'bg-neon-blue text-black shadow-lg shadow-neon-blue/50 scale-105' 
+                    : 'bg-white/10 hover:bg-white/20 text-gray-300'
                 }`}
               >
-                {p1.name} Won
+                ✓ {p1.name} Won
               </button>
               <button 
                 onClick={() => setSelectedWinner(p2.id)} 
-                className={`flex-1 py-2 rounded text-sm font-bold uppercase transition-colors ${
+                className={`flex-1 py-3 rounded-lg text-sm font-bold uppercase transition-all ${
                   selectedWinner === p2.id 
-                    ? 'bg-neon-blue text-black' 
-                    : 'bg-white/10 hover:bg-white/20'
+                    ? 'bg-neon-blue text-black shadow-lg shadow-neon-blue/50 scale-105' 
+                    : 'bg-white/10 hover:bg-white/20 text-gray-300'
                 }`}
               >
-                {p2.name} Won
+                ✓ {p2.name} Won
               </button>
             </div>
 
             <button 
               onClick={handleAddGame} 
               disabled={!selectedWinner}
-              className="w-full flex items-center justify-center gap-2 bg-neon-green text-black hover:bg-white transition-colors rounded-lg py-2 text-sm font-bold uppercase disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`w-full flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-bold uppercase transition-all ${
+                selectedWinner
+                  ? 'bg-neon-green text-black hover:bg-white shadow-lg shadow-neon-green/50 cursor-pointer' 
+                  : 'bg-gray-600 text-gray-400 cursor-not-allowed opacity-50'
+              }`}
             >
               <Trophy className="w-4 h-4" /> Add Game {match.games.length + 1}
+              {!selectedWinner && <span className="text-[10px] ml-2">(Select winner above)</span>}
             </button>
           </div>
 
