@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { initialMatches, initialPlayers, Match, Player, GameScore } from '../data/initialData';
-import { JSONBIN_CONFIG } from '../lib/tournamentSync';
+import { TOURNAMENT_API } from '../lib/tournamentSync';
 
 interface TournamentState {
   players: Player[];
@@ -12,131 +12,89 @@ interface TournamentState {
   lastUpdated: number;
 }
 
-// Fetch from JSONBin (cloud storage)
+// Fetch from Vercel KV (ONLY cloud storage - no localStorage)
 const fetchFromCloud = async (): Promise<{ players: Player[]; matches: Match[] } | null> => {
   try {
-    console.log('🔄 Fetching from JSONBin...');
-    const response = await fetch(`${JSONBIN_CONFIG.BASE_URL}/${JSONBIN_CONFIG.BIN_ID}/latest`, {
+    console.log('🔄 Fetching from Vercel KV (Upstash Redis)...');
+    const response = await fetch(TOURNAMENT_API.BASE_URL, {
       method: 'GET',
-      headers: {
-        'X-Master-Key': JSONBIN_CONFIG.API_KEY
-      }
+      headers: { 'Content-Type': 'application/json' }
     });
     
-    console.log('JSONBin response status:', response.status);
+    console.log('Vercel KV response status:', response.status);
     
     if (response.ok) {
       const data = await response.json();
-      console.log('JSONBin data received:', data);
-      // JSONBin v3 wraps data in 'record' property
-      const record = data.record || data;
-      if (record && record.players && record.matches) {
-        console.log('✅ Successfully loaded from JSONBin');
-        return record;
+      console.log('Vercel KV data received:', data);
+      
+      if (data && data.players && data.matches) {
+        console.log('✅ Successfully loaded from Vercel KV');
+        return data;
       }
     } else {
-      console.error('JSONBin fetch failed:', response.statusText);
+      console.error('Vercel KV fetch failed:', response.statusText);
     }
   } catch (e) {
-    console.error('Failed to fetch from JSONBin:', e);
+    console.error('Failed to fetch from Vercel KV:', e);
   }
   return null;
 };
 
-// Save to JSONBin (cloud storage)
+// Save to Vercel KV (ONLY cloud storage - no localStorage)
 const saveToCloud = async (players: Player[], matches: Match[]) => {
   try {
-    console.log('💾 Saving to JSONBin...', { playersCount: players.length, matchesCount: matches.length });
-    const response = await fetch(`${JSONBIN_CONFIG.BASE_URL}/${JSONBIN_CONFIG.BIN_ID}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Master-Key': JSONBIN_CONFIG.API_KEY
-      },
+    console.log('💾 Saving to Vercel KV...', { playersCount: players.length, matchesCount: matches.length });
+    const response = await fetch(TOURNAMENT_API.BASE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ players, matches })
     });
     
-    console.log('JSONBin save response:', response.status, response.statusText);
+    console.log('Vercel KV save response:', response.status, response.statusText);
     
     if (response.ok) {
-      console.log('✅ Successfully saved to JSONBin');
+      console.log('✅ Successfully saved to Vercel KV');
     } else {
-      console.error('Failed to save to JSONBin:', response.statusText);
+      console.error('Failed to save to Vercel KV:', response.statusText);
     }
   } catch (e) {
-    console.error('Failed to save to JSONBin:', e);
+    console.error('Failed to save to Vercel KV:', e);
   }
 };
 
-// Load from cloud (JSONBin) or fallback to localStorage or use initial data
-const loadFromStorage = async () => {
-  // Try cloud first
+// Load data from Vercel KV ONLY (no localStorage fallback)
+const loadData = async () => {
+  console.log('🔄 Loading tournament data from Vercel KV...');
+  
+  // Fetch from Vercel KV
   const cloudData = await fetchFromCloud();
   
-  // Check if cloud data has proper tournament structure (16 players, 15 matches)
-  const hasValidTournamentData = cloudData && 
-    cloudData.players && cloudData.players.length >= 16 && 
-    cloudData.matches && cloudData.matches.length >= 15;
-  
-  if (hasValidTournamentData) {
-    console.log('✅ Loaded full tournament from cloud (JSONBin)');
-    // Ensure games array exists for all matches
-    const matchesWithGames = cloudData.matches.map((m: any) => ({
-      ...m,
-      games: m.games || []
-    }));
-    return {
-      players: cloudData.players,
-      matches: matchesWithGames
-    };
-  }
-  
-  console.log('⚠️ Cloud data incomplete, checking localStorage...');
-  
-  // Fallback to localStorage
-  try {
-    const saved = localStorage.getItem('snooker-tournament');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      const hasValidLocalData = parsed.players && parsed.players.length >= 16 && 
-                                parsed.matches && parsed.matches.length >= 15;
-      
-      if (hasValidLocalData) {
-        console.log('✅ Loaded from localStorage (fallback)');
-        // Ensure games array exists for all matches
-        const matchesWithGames = (parsed.matches || initialMatches).map((m: any) => ({
-          ...m,
-          games: m.games || []
-        }));
-        return {
-          players: parsed.players || initialPlayers,
-          matches: matchesWithGames
-        };
-      }
+  if (cloudData && cloudData.players && cloudData.matches) {
+    // Check if we have valid tournament data
+    const hasValidData = cloudData.players.length >= 16 && cloudData.matches.length >= 15;
+    
+    if (hasValidData) {
+      console.log('✅ Loaded complete tournament from Vercel KV');
+      // Ensure games array exists for all matches
+      const matchesWithGames = cloudData.matches.map((m: any) => ({
+        ...m,
+        games: m.games || []
+      }));
+      return {
+        players: cloudData.players,
+        matches: matchesWithGames
+      };
     }
-  } catch (e) {
-    console.error('Failed to load from localStorage:', e);
   }
   
-  console.log('✅ Using initial tournament data');
+  // If no data in Vercel KV yet, return initial tournament data
+  // (First time setup - data will be saved to KV on first update)
+  console.log('⚠️ No tournament data in Vercel KV yet, using initial data');
+  console.log('ℹ️ Update a match score to save data to the cloud');
   return {
     players: initialPlayers,
     matches: initialMatches.map(m => ({ ...m, games: m.games || [] }))
   };
-};
-
-const saveToStorage = (players: Player[], matches: Match[]) => {
-  // Save to localStorage (local backup)
-  try {
-    localStorage.setItem('snooker-tournament', JSON.stringify({ players, matches }));
-  } catch (e) {
-    console.error('Failed to save to localStorage:', e);
-  }
-  
-  // Save to cloud (JSONBin) - async, fire and forget
-  saveToCloud(players, matches).catch(e => {
-    console.error('Failed to save to cloud:', e);
-  });
 };
 
 export const useTournamentStore = create<TournamentState>((set, get) => {
@@ -147,8 +105,8 @@ export const useTournamentStore = create<TournamentState>((set, get) => {
     lastUpdated: Date.now()
   };
   
-  // Load data asynchronously
-  loadFromStorage().then((data) => {
+  // Load data asynchronously from Vercel KV
+  loadData().then((data) => {
     set({
       players: data.players,
       matches: data.matches,
@@ -226,14 +184,14 @@ export const useTournamentStore = create<TournamentState>((set, get) => {
             return p;
           });
 
-          // Save to localStorage
-          saveToStorage(updatedPlayers, updatedMatches);
+          // Save to Vercel KV
+          saveToCloud(updatedPlayers, updatedMatches);
           
           return { matches: updatedMatches, players: updatedPlayers };
         }
 
-        // Save to localStorage
-        saveToStorage(state.players, updatedMatches);
+        // Save to Vercel KV
+        saveToCloud(state.players, updatedMatches);
         
         return { matches: updatedMatches };
       });
@@ -244,13 +202,18 @@ export const useTournamentStore = create<TournamentState>((set, get) => {
         const updatedMatches = state.matches.map((m) =>
           m.id === matchId ? { ...m, videoUrls, status: m.status === 'pending' ? 'live' : m.status } : m
         );
-        saveToStorage(state.players, updatedMatches);
+        saveToCloud(state.players, updatedMatches);
         return { matches: updatedMatches };
       });
     },
     
     resetTournament: () => {
-      localStorage.removeItem('snooker-tournament');
+      // Clear Vercel KV
+      fetch(TOURNAMENT_API.BASE_URL, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      }).catch(e => console.error('Failed to clear Vercel KV:', e));
+      
       set({
         players: initialPlayers,
         matches: [...initialMatches],
@@ -259,26 +222,19 @@ export const useTournamentStore = create<TournamentState>((set, get) => {
     },
     
     refreshData: async () => {
-      // Fetch from cloud first
+      // Fetch from Vercel KV ONLY
       const cloudData = await fetchFromCloud();
-      if (cloudData) {
+      if (cloudData && cloudData.players && cloudData.matches) {
         set({
           players: cloudData.players,
           matches: cloudData.matches,
           lastUpdated: Date.now()
         });
-        console.log('✅ Refreshed from cloud');
+        console.log('✅ Refreshed from Vercel KV');
         return;
       }
       
-      // Fallback to localStorage
-      const updated = loadFromStorage();
-      set({
-        players: (await updated).players,
-        matches: (await updated).matches,
-        lastUpdated: Date.now()
-      });
-      console.log('✅ Refreshed from localStorage');
+      console.log('⚠️ No data in Vercel KV');
     },
     
     lastUpdated: Date.now()
