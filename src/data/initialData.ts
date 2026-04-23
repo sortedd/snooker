@@ -20,10 +20,18 @@ export interface Match {
   player2Id: string | null;
   winnerId: string | null;
   status: 'pending' | 'live' | 'completed';
-  scoreP1: number;
-  scoreP2: number;
+  scoreP1: number; // Total games won by player 1
+  scoreP2: number; // Total games won by player 2
+  games: GameScore[]; // Individual game scores
   videoUrls: string[]; // YouTube embed URLs
   date: string;
+}
+
+export interface GameScore {
+  gameNumber: number;
+  winnerId: string | null; // Which player won this game
+  scoreP1: number; // Frame score for player 1
+  scoreP2: number; // Frame score for player 2
 }
 
 // 16 world-class snooker player placeholders
@@ -48,25 +56,25 @@ export const initialPlayers: Player[] = [
 
 export const initialMatches: Match[] = [
   // Round of 16 (8 matches)
-  { id: 'm1', round: 'Round of 16', roundSequence: 1, matchSequenceInRound: 1, player1Id: 'p4', player2Id: 'p3', winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, videoUrls: [], date: '2026-04-23T16:00:00Z' },
-  { id: 'm2', round: 'Round of 16', roundSequence: 1, matchSequenceInRound: 2, player1Id: 'p1', player2Id: 'p2', winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, videoUrls: [], date: '2026-04-23T18:00:00Z' },
-  { id: 'm3', round: 'Round of 16', roundSequence: 1, matchSequenceInRound: 3, player1Id: 'p5', player2Id: 'p6', winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, videoUrls: ['https://www.youtube.com/embed/b0bOXXA0mQo'], date: '2026-04-24T16:00:00Z' },
-  { id: 'm4', round: 'Round of 16', roundSequence: 1, matchSequenceInRound: 4, player1Id: 'p7', player2Id: 'p8', winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, videoUrls: [], date: '2026-04-24T18:00:00Z' },
-  { id: 'm5', round: 'Round of 16', roundSequence: 1, matchSequenceInRound: 5, player1Id: 'p9', player2Id: 'p10', winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, videoUrls: [], date: '2026-04-25T16:00:00Z' },
-  { id: 'm6', round: 'Round of 16', roundSequence: 1, matchSequenceInRound: 6, player1Id: 'p11', player2Id: 'p12', winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, videoUrls: [], date: '2026-04-25T18:00:00Z' },
-  { id: 'm7', round: 'Round of 16', roundSequence: 1, matchSequenceInRound: 7, player1Id: 'p13', player2Id: 'p14', winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, videoUrls: [], date: '2026-04-26T16:00:00Z' },
-  { id: 'm8', round: 'Round of 16', roundSequence: 1, matchSequenceInRound: 8, player1Id: 'p15', player2Id: 'p16', winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, videoUrls: [], date: '2026-04-26T18:00:00Z' },
+  { id: 'm1', round: 'Round of 16', roundSequence: 1, matchSequenceInRound: 1, player1Id: 'p4', player2Id: 'p3', winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, games: [], videoUrls: [], date: '2026-04-23T16:00:00Z' },
+  { id: 'm2', round: 'Round of 16', roundSequence: 1, matchSequenceInRound: 2, player1Id: 'p1', player2Id: 'p2', winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, games: [], videoUrls: [], date: '2026-04-23T18:00:00Z' },
+  { id: 'm3', round: 'Round of 16', roundSequence: 1, matchSequenceInRound: 3, player1Id: 'p5', player2Id: 'p6', winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, games: [], videoUrls: ['https://www.youtube.com/embed/b0bOXXA0mQo'], date: '2026-04-24T16:00:00Z' },
+  { id: 'm4', round: 'Round of 16', roundSequence: 1, matchSequenceInRound: 4, player1Id: 'p7', player2Id: 'p8', winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, games: [], videoUrls: [], date: '2026-04-24T18:00:00Z' },
+  { id: 'm5', round: 'Round of 16', roundSequence: 1, matchSequenceInRound: 5, player1Id: 'p9', player2Id: 'p10', winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, games: [], videoUrls: [], date: '2026-04-25T16:00:00Z' },
+  { id: 'm6', round: 'Round of 16', roundSequence: 1, matchSequenceInRound: 6, player1Id: 'p11', player2Id: 'p12', winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, games: [], videoUrls: [], date: '2026-04-25T18:00:00Z' },
+  { id: 'm7', round: 'Round of 16', roundSequence: 1, matchSequenceInRound: 7, player1Id: 'p13', player2Id: 'p14', winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, games: [], videoUrls: [], date: '2026-04-26T16:00:00Z' },
+  { id: 'm8', round: 'Round of 16', roundSequence: 1, matchSequenceInRound: 8, player1Id: 'p15', player2Id: 'p16', winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, games: [], videoUrls: [], date: '2026-04-26T18:00:00Z' },
 
   // Quarter Finals (4 matches)
-  { id: 'm9', round: 'Quarter Finals', roundSequence: 2, matchSequenceInRound: 1, player1Id: null, player2Id: null, winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, videoUrls: [], date: '2026-04-28T16:00:00Z' },
-  { id: 'm10', round: 'Quarter Finals', roundSequence: 2, matchSequenceInRound: 2, player1Id: null, player2Id: null, winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, videoUrls: [], date: '2026-04-28T18:00:00Z' },
-  { id: 'm11', round: 'Quarter Finals', roundSequence: 2, matchSequenceInRound: 3, player1Id: null, player2Id: null, winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, videoUrls: [], date: '2026-04-29T16:00:00Z' },
-  { id: 'm12', round: 'Quarter Finals', roundSequence: 2, matchSequenceInRound: 4, player1Id: null, player2Id: null, winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, videoUrls: [], date: '2026-04-29T18:00:00Z' },
+  { id: 'm9', round: 'Quarter Finals', roundSequence: 2, matchSequenceInRound: 1, player1Id: null, player2Id: null, winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, games: [], videoUrls: [], date: '2026-04-28T16:00:00Z' },
+  { id: 'm10', round: 'Quarter Finals', roundSequence: 2, matchSequenceInRound: 2, player1Id: null, player2Id: null, winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, games: [], videoUrls: [], date: '2026-04-28T18:00:00Z' },
+  { id: 'm11', round: 'Quarter Finals', roundSequence: 2, matchSequenceInRound: 3, player1Id: null, player2Id: null, winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, games: [], videoUrls: [], date: '2026-04-29T16:00:00Z' },
+  { id: 'm12', round: 'Quarter Finals', roundSequence: 2, matchSequenceInRound: 4, player1Id: null, player2Id: null, winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, games: [], videoUrls: [], date: '2026-04-29T18:00:00Z' },
 
   // Semi Finals (2 matches)
-  { id: 'm13', round: 'Semi Finals', roundSequence: 3, matchSequenceInRound: 1, player1Id: null, player2Id: null, winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, videoUrls: [], date: '2026-05-01T16:00:00Z' },
-  { id: 'm14', round: 'Semi Finals', roundSequence: 3, matchSequenceInRound: 2, player1Id: null, player2Id: null, winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, videoUrls: [], date: '2026-05-01T18:00:00Z' },
+  { id: 'm13', round: 'Semi Finals', roundSequence: 3, matchSequenceInRound: 1, player1Id: null, player2Id: null, winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, games: [], videoUrls: [], date: '2026-05-01T16:00:00Z' },
+  { id: 'm14', round: 'Semi Finals', roundSequence: 3, matchSequenceInRound: 2, player1Id: null, player2Id: null, winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, games: [], videoUrls: [], date: '2026-05-01T18:00:00Z' },
 
   // Final (1 match)
-  { id: 'm15', round: 'Final', roundSequence: 4, matchSequenceInRound: 1, player1Id: null, player2Id: null, winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, videoUrls: [], date: '2026-05-03T16:00:00Z' }
+  { id: 'm15', round: 'Final', roundSequence: 4, matchSequenceInRound: 1, player1Id: null, player2Id: null, winnerId: null, status: 'pending', scoreP1: 0, scoreP2: 0, games: [], videoUrls: [], date: '2026-05-03T16:00:00Z' }
 ];

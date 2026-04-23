@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { useTournamentStore } from '../store/useTournamentStore';
 import { motion } from 'motion/react';
-import { Play, ArrowLeft } from 'lucide-react';
+import { Play, ArrowLeft, Trophy } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '../lib/utils';
 
@@ -85,7 +85,7 @@ export function MatchDetail() {
                    )}
                  </div>
                  
-                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                    <h1 className="text-3xl md:text-5xl font-sans font-black italic uppercase tracking-tighter leading-tight">
                      <span className={match.winnerId === p1?.id ? "text-neon-blue" : ""}>{p1?.name || 'TBD'}</span>
                      <span className="text-gray-600 italic font-sans mx-4 text-2xl md:text-3xl">vs</span>
@@ -100,6 +100,108 @@ export function MatchDetail() {
                      </div>
                    )}
                  </div>
+
+                 {/* Detailed Frame Score Breakdown */}
+                 {match.games && match.games.length > 0 && (
+                   <div className="bg-dark-surface/50 border border-glass-border rounded-2xl p-6 mb-8">
+                     <h3 className="text-lg font-bold uppercase tracking-wider text-white mb-4 flex items-center gap-2">
+                       <Trophy className="w-5 h-5 text-neon-green" />
+                       Frame-by-Frame Breakdown
+                     </h3>
+                     
+                     <div className="space-y-3">
+                       {match.games.map((game, index) => {
+                         const gameWinner = game.winnerId === p1?.id ? p1 : game.winnerId === p2?.id ? p2 : null;
+                         const isP1Winner = game.winnerId === p1?.id;
+                         
+                         return (
+                           <motion.div
+                             key={game.gameNumber}
+                             initial={{ opacity: 0, x: -20 }}
+                             animate={{ opacity: 1, x: 0 }}
+                             transition={{ delay: index * 0.1 }}
+                             className="bg-black/40 rounded-xl p-4 border border-glass-border"
+                           >
+                             <div className="flex items-center justify-between mb-2">
+                               <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                                 Frame {game.gameNumber}
+                               </span>
+                               {gameWinner && (
+                                 <span className="text-xs font-bold text-neon-green flex items-center gap-1">
+                                   <Trophy className="w-3 h-3" />
+                                   {gameWinner.name} Won
+                                 </span>
+                               )}
+                             </div>
+                             
+                             <div className="grid grid-cols-2 gap-4">
+                               {/* Player 1 Score */}
+                               <div className={`flex items-center justify-between p-3 rounded-lg ${
+                                 isP1Winner ? 'bg-neon-blue/10 border border-neon-blue/30' : 'bg-white/5'
+                               }`}>
+                                 <div className="flex items-center gap-2">
+                                   <img src={p1?.image} alt={p1?.name} className="w-8 h-8 rounded-full object-cover" />
+                                   <div>
+                                     <div className={`text-sm font-bold ${isP1Winner ? 'text-neon-blue' : 'text-gray-400'}`}>
+                                       {p1?.name}
+                                     </div>
+                                     {!isP1Winner && (
+                                       <div className="text-[10px] text-gray-500">Lost by {game.scoreP2 - game.scoreP1} points</div>
+                                     )}
+                                   </div>
+                                 </div>
+                                 <div className={`text-2xl font-mono font-bold ${isP1Winner ? 'text-white' : 'text-gray-400'}`}>
+                                   {game.scoreP1}
+                                 </div>
+                               </div>
+                               
+                               {/* Player 2 Score */}
+                               <div className={`flex items-center justify-between p-3 rounded-lg ${
+                                 !isP1Winner ? 'bg-neon-blue/10 border border-neon-blue/30' : 'bg-white/5'
+                               }`}>
+                                 <div className="flex items-center gap-2">
+                                   <img src={p2?.image} alt={p2?.name} className="w-8 h-8 rounded-full object-cover" />
+                                   <div>
+                                     <div className={`text-sm font-bold ${!isP1Winner ? 'text-neon-blue' : 'text-gray-400'}`}>
+                                       {p2?.name}
+                                     </div>
+                                     {isP1Winner && (
+                                       <div className="text-[10px] text-gray-500">Lost by {game.scoreP1 - game.scoreP2} points</div>
+                                     )}
+                                   </div>
+                                 </div>
+                                 <div className={`text-2xl font-mono font-bold ${!isP1Winner ? 'text-white' : 'text-gray-400'}`}>
+                                   {game.scoreP2}
+                                 </div>
+                               </div>
+                             </div>
+                             
+                             {/* Points Difference */}
+                             <div className="mt-2 text-center text-xs text-gray-500">
+                               Point Difference: <span className="text-white font-bold">{Math.abs(game.scoreP1 - game.scoreP2)}</span> points
+                             </div>
+                           </motion.div>
+                         );
+                       })}
+                     </div>
+                     
+                     {/* Match Summary */}
+                     <div className="mt-6 pt-4 border-t border-glass-border">
+                       <div className="flex items-center justify-between text-sm">
+                         <span className="text-gray-400">Final Score</span>
+                         <div className="flex items-center gap-3">
+                           <span className={`font-bold ${match.scoreP1 > match.scoreP2 ? 'text-neon-blue' : 'text-gray-400'}`}>
+                             {p1?.name}: {match.scoreP1}
+                           </span>
+                           <span className="text-gray-600">-</span>
+                           <span className={`font-bold ${match.scoreP2 > match.scoreP1 ? 'text-neon-blue' : 'text-gray-400'}`}>
+                             {p2?.name}: {match.scoreP2}
+                           </span>
+                         </div>
+                       </div>
+                     </div>
+                   </div>
+                 )}
               </div>
            </div>
 

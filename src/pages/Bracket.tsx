@@ -15,7 +15,7 @@ function MatchNode({ match, players, isFinal }: { match?: Match, players: Player
       <div className={cn(
         "flex items-center justify-between px-3 py-2 border-b border-glass-border last:border-b-0",
         p ? "" : "opacity-30",
-        isWinner ? "bg-neon-blue/10 text-white" : ""
+        isWinner ? "bg-neon-blue/20 text-white" : ""
       )}>
         <div className="flex items-center gap-2 overflow-hidden">
           {p ? (
@@ -23,12 +23,19 @@ function MatchNode({ match, players, isFinal }: { match?: Match, players: Player
           ) : (
             <div className="w-5 h-5 rounded-full bg-dark-surface shrink-0" />
           )}
-          <span className={cn("text-xs font-medium truncate", isWinner ? "text-neon-blue" : "text-gray-300")}>
+          <span className={cn(
+            "text-xs font-medium truncate", 
+            isWinner ? "text-neon-blue font-bold" : "text-gray-300"
+          )}>
             {p?.name || 'TBD'}
           </span>
+          {isWinner && <span className="text-[8px] text-neon-green ml-1">✓</span>}
         </div>
-        <span className={cn("text-xs font-mono tracking-tighter font-bold w-4 text-center shrink-0", isWinner ? "text-white" : "text-gray-500")}>
-          {score !== undefined && match.status === 'completed' ? score : '-'}
+        <span className={cn(
+          "text-xs font-mono tracking-tighter font-bold w-4 text-center shrink-0", 
+          isWinner ? "text-white text-sm" : "text-gray-500"
+        )}>
+          {score !== undefined && (match.status === 'completed' || score > 0) ? score : '-'}
         </span>
       </div>
     );
@@ -36,8 +43,11 @@ function MatchNode({ match, players, isFinal }: { match?: Match, players: Player
 
   return (
     <Link to={`/match/${match.id}`} className={cn(
-      "w-48 xl:w-56 glass-panel rounded-lg overflow-hidden relative group hover:border-neon-blue/50 transition-all",
-      isFinal ? "w-56 xl:w-64 border-neon-blue/40 shadow-[0_0_15px_rgba(0,240,255,0.1)]" : ""
+      "w-48 xl:w-56 glass-panel rounded-lg overflow-hidden relative group transition-all",
+      isFinal ? "w-56 xl:w-64 border-neon-blue/40 shadow-[0_0_15px_rgba(0,240,255,0.1)]" : "",
+      match.status === 'completed' 
+        ? "border-neon-green/50 hover:border-neon-green shadow-[0_0_10px_rgba(74,222,128,0.2)]" 
+        : "hover:border-neon-blue/50"
     )}>
       {isFinal && (
         <div className="bg-neon-blue/20 text-neon-blue text-[10px] font-bold text-center py-1 uppercase tracking-wider relative z-10">
@@ -49,9 +59,12 @@ function MatchNode({ match, players, isFinal }: { match?: Match, players: Player
         {getPlayerDisplay(p2, match.scoreP2, match.winnerId === p2?.id)}
       </div>
       
-      {/* Pending status indicator */}
+      {/* Status indicators */}
       {match.status === 'pending' && match.player1Id && match.player2Id && (
-         <div className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)] z-20" />
+         <div className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-yellow-500 shadow-[0_0_5px_rgba(234,179,8,0.5)] z-20" />
+      )}
+      {match.status === 'completed' && (
+         <div className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-neon-green shadow-[0_0_5px_rgba(74,222,128,0.8)] z-20" />
       )}
     </Link>
   );

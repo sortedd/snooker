@@ -1,14 +1,15 @@
 import { useState } from 'react';
+import type { FormEvent } from 'react';
 import { useTournamentStore } from '../store/useTournamentStore';
 import { motion } from 'motion/react';
 import { ShieldAlert, Save, Video, Trophy } from 'lucide-react';
 
 export function Admin() {
-  const { matches, players, setWinner, updateMatchVideo } = useTournamentStore();
+  const { matches, players, addGameScore, updateMatchVideos } = useTournamentStore();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = (e: FormEvent) => {
     e.preventDefault();
     if (password === 'admin123') setIsAuthenticated(true);
     else alert('Incorrect password. Try "admin123" for demo.');
@@ -46,7 +47,7 @@ export function Admin() {
           <h1 className="text-3xl md:text-4xl font-sans font-black uppercase tracking-tighter text-neon-green flex items-center gap-3">
              <ShieldAlert className="w-8 h-8" /> Control Center
           </h1>
-          <p className="text-gray-400 mt-1">Manage scores, videos, and tournament progression.</p>
+          <p className="text-gray-400 mt-1">Manage scores, videos, and tournament progression. (Best of 3)</p>
         </div>
         <button onClick={() => setIsAuthenticated(false)} className="text-sm text-gray-500 hover:text-white underline">Logout</button>
       </div>
@@ -57,7 +58,7 @@ export function Admin() {
              <h3 className="text-xl font-bold uppercase tracking-wider text-white bg-dark-surface p-3 rounded-lg border border-glass-border">{round}</h3>
              <div className="space-y-4">
                {matches.filter(m => m.round === round).map(match => (
-                 <MatchEditor key={match.id} match={match} players={players} onSave={setWinner} onSaveVideo={updateMatchVideo} />
+                 <MatchEditor key={match.id} match={match} players={players} onAddGame={addGameScore} onSaveVideo={updateMatchVideos} />
                ))}
              </div>
           </div>
@@ -67,19 +68,25 @@ export function Admin() {
   );
 }
 
-function MatchEditor({ match, players, onSave, onSaveVideo }: any) {
+function MatchEditor({ match, players, onAddGame, onSaveVideo }: any) {
   const p1 = players.find((p: any) => p.id === match.player1Id);
   const p2 = players.find((p: any) => p.id === match.player2Id);
-  const [s1, setS1] = useState(match.scoreP1);
-  const [s2, setS2] = useState(match.scoreP2);
+  const [selectedWinner, setSelectedWinner] = useState<string>('');
+  const [frameScoreP1, setFrameScoreP1] = useState(0);
+  const [frameScoreP2, setFrameScoreP2] = useState(0);
   const [vidList, setVidList] = useState<string[]>(match.videoUrls || []);
 
-  const handleUpdateScore = () => {
+  const handleAddGame = () => {
     if (!p1 || !p2) return alert('Match players not set yet!');
-    const winnerId = s1 > s2 ? p1.id : s2 > s1 ? p2.id : null;
-    if (!winnerId && s1 !== 0 && s2 !== 0) return alert('Needs a clear winner!');
-    if (!winnerId) return alert('Update scores to define a winner');
-    onSave(match.id, winnerId, s1, s2);
+    if (!selectedWinner) return alert('Please select a winner for this game!');
+    
+    const gameNumber = match.games.length + 1;
+    if (gameNumber > 3) return alert('Match already completed!');
+    
+    onAddGame(match.id, gameNumber, selectedWinner, frameScoreP1, frameScoreP2);
+    setSelectedWinner('');
+    setFrameScoreP1(0);
+    setFrameScoreP2(0);
   };
 
   const handleUpdateVideo = (index: number, val: string) => {
@@ -89,42 +96,129 @@ function MatchEditor({ match, players, onSave, onSaveVideo }: any) {
   };
 
   const addVideo = () => setVidList([...vidList, '']);
-  const removeVideo = (index: number) => setVidList(vidList.filter((_, i) => i !== index));
+  const removeVideo = (index: number) => setVidList(vidList.filter((_: any, i: any) => i !== index));
+
+  const gamesNeeded = 2 - match.scoreP1; // Games p1 needs to win
+  const gamesNeededP2 = 2 - match.scoreP2; // Games p2 needs to win
+  const isMatchComplete = match.scoreP1 >= 2 || match.scoreP2 >= 2;
 
   return (
     <div className="glass-panel p-4 rounded-xl border border-glass-border flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <span className="text-xs text-neon-blue uppercase font-bold tracking-widest">{p1?.name && p2?.name ? 'Active Match (Best of 3)' : 'Pending Players'}</span>
+        <span className="text-xs text-neon-blue uppercase font-bold tracking-widest">
+          {isMatchComplete ? '✓ Match Completed' : p1?.name && p2?.name ? 'Active Match (Best of 3)' : 'Pending Players'}
+        </span>
         <span className="text-[10px] text-gray-500">{match.id}</span>
       </div>
 
-      {p1 && p2 ? (
-        <>
-          <div className="grid grid-cols-5 items-center gap-4">
-            <div className="col-span-2 flex flex-col gap-1 items-end text-right">
-              <span className="font-medium text-sm truncate w-full">{p1.name}</span>
-              <input type="number" min="0" max="2" value={s1} onChange={e => setS1(Number(e.target.value))} className="w-16 bg-black border border-glass-border rounded p-1 text-center" />
-            </div>
-            <div className="col-span-1 text-center text-gray-600 text-sm">VS</div>
-            <div className="col-span-2 flex flex-col gap-1 items-start">
-              <span className="font-medium text-sm truncate w-full">{p2.name}</span>
-              <input type="number" min="0" max="2" value={s2} onChange={e => setS2(Number(e.target.value))} className="w-16 bg-black border border-glass-border rounded p-1 text-center" />
-            </div>
+      {/* Current Score Display */}
+      {p1 && p2 && (
+        <div className="bg-dark-surface p-3 rounded-lg border border-glass-border">
+          <div className="flex items-center justify-between text-sm">
+            <span className={`font-bold ${match.scoreP1 > match.scoreP2 ? 'text-neon-blue' : 'text-gray-400'}`}>
+              {p1.name}: {match.scoreP1}
+            </span>
+            <span className="text-gray-500 text-xs">VS</span>
+            <span className={`font-bold ${match.scoreP2 > match.scoreP1 ? 'text-neon-blue' : 'text-gray-400'}`}>
+              {p2.name}: {match.scoreP2}
+            </span>
           </div>
-          
-          <div className="flex gap-2 mt-2">
-             <button onClick={handleUpdateScore} disabled={match.status === 'completed'} className="flex-1 flex items-center justify-center gap-2 bg-white/10 hover:bg-neon-green hover:text-black transition-colors rounded-lg py-2 text-sm font-bold uppercase disabled:opacity-50 disabled:cursor-not-allowed">
-               <Trophy className="w-4 h-4" /> {match.status === 'completed' ? 'Completed' : 'Set Winner'}
-             </button>
+        </div>
+      )}
+
+      {/* Completed Games */}
+      {match.games && match.games.length > 0 && (
+        <div className="space-y-2">
+          <span className="text-xs text-gray-400 uppercase font-bold">Completed Games:</span>
+          {match.games.map((game: any) => {
+            const gameWinner = game.winnerId === p1?.id ? p1 : game.winnerId === p2?.id ? p2 : null;
+            return (
+              <div key={game.gameNumber} className="flex items-center gap-2 text-sm bg-black/30 p-2 rounded">
+                <span className="text-xs font-bold text-gray-500">Game {game.gameNumber}:</span>
+                <span className={game.winnerId === p1?.id ? 'text-neon-blue font-bold' : 'text-gray-400'}>
+                  {p1?.name} ({game.scoreP1})
+                </span>
+                <span className="text-gray-600">vs</span>
+                <span className={game.winnerId === p2?.id ? 'text-neon-blue font-bold' : 'text-gray-400'}>
+                  {p2?.name} ({game.scoreP2})
+                </span>
+                {gameWinner && <Trophy className="w-3 h-3 text-neon-green ml-auto" />}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {p1 && p2 && !isMatchComplete ? (
+        <>
+          {/* Add New Game */}
+          <div className="border-t border-glass-border pt-4">
+            <span className="text-xs text-neon-green uppercase font-bold tracking-widest mb-3 block">Add Game Result:</span>
+            
+            <div className="grid grid-cols-5 items-center gap-4 mb-3">
+              <div className="col-span-2 flex flex-col gap-1 items-end text-right">
+                <span className="font-medium text-sm truncate w-full">{p1.name}</span>
+                <input 
+                  type="number" 
+                  min="0" 
+                  value={frameScoreP1} 
+                  onChange={e => setFrameScoreP1(Number(e.target.value))} 
+                  className="w-16 bg-black border border-glass-border rounded p-1 text-center" 
+                />
+              </div>
+              <div className="col-span-1 text-center text-gray-600 text-sm">VS</div>
+              <div className="col-span-2 flex flex-col gap-1 items-start">
+                <span className="font-medium text-sm truncate w-full">{p2.name}</span>
+                <input 
+                  type="number" 
+                  min="0" 
+                  value={frameScoreP2} 
+                  onChange={e => setFrameScoreP2(Number(e.target.value))} 
+                  className="w-16 bg-black border border-glass-border rounded p-1 text-center" 
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-2 mb-3">
+              <button 
+                onClick={() => setSelectedWinner(p1.id)} 
+                className={`flex-1 py-2 rounded text-sm font-bold uppercase transition-colors ${
+                  selectedWinner === p1.id 
+                    ? 'bg-neon-blue text-black' 
+                    : 'bg-white/10 hover:bg-white/20'
+                }`}
+              >
+                {p1.name} Won
+              </button>
+              <button 
+                onClick={() => setSelectedWinner(p2.id)} 
+                className={`flex-1 py-2 rounded text-sm font-bold uppercase transition-colors ${
+                  selectedWinner === p2.id 
+                    ? 'bg-neon-blue text-black' 
+                    : 'bg-white/10 hover:bg-white/20'
+                }`}
+              >
+                {p2.name} Won
+              </button>
+            </div>
+
+            <button 
+              onClick={handleAddGame} 
+              disabled={!selectedWinner}
+              className="w-full flex items-center justify-center gap-2 bg-neon-green text-black hover:bg-white transition-colors rounded-lg py-2 text-sm font-bold uppercase disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Trophy className="w-4 h-4" /> Add Game {match.games.length + 1}
+            </button>
           </div>
 
+          {/* Video Section */}
           <div className="border-t border-glass-border pt-4 mt-2 flex flex-col gap-2">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-gray-400">Match Videos</span>
               <button onClick={addVideo} className="text-xs text-neon-blue hover:text-white transition-colors">+ Add Game Video</button>
             </div>
             
-            {vidList.map((vid, idx) => (
+            {vidList.map((vid: any, idx: any) => (
               <div key={idx} className="flex flex-col gap-1 mb-2">
                 <span className="text-[10px] text-gray-500 uppercase">Game {idx + 1}</span>
                 <div className="flex items-center gap-2">
@@ -148,6 +242,10 @@ function MatchEditor({ match, players, onSave, onSaveVideo }: any) {
             </button>
           </div>
         </>
+      ) : p1 && p2 && isMatchComplete ? (
+        <div className="text-sm text-neon-green py-4 text-center font-bold">
+          Match completed! Winner: {match.winnerId === p1?.id ? p1.name : p2?.name}
+        </div>
       ) : (
         <div className="text-sm text-gray-500 py-4 text-center">Waiting for previous round results...</div>
       )}

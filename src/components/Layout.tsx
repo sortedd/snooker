@@ -24,7 +24,7 @@ export function Layout() {
       </div>
 
       {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 glass-panel border-b border-glass-border/50">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-dark-bg/95 backdrop-blur-md border-b border-glass-border/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link to="/" className="flex items-center gap-2 group">
@@ -72,13 +72,14 @@ export function Layout() {
             </div>
 
             {/* Mobile menu button */}
-            <div className="md:hidden flex flex-row items-center gap-4">
+            <div className="md:hidden flex items-center gap-2">
               <Link to="/admin" className="p-2 text-gray-400 hover:text-neon-green transition-colors">
                 <Settings className="w-5 h-5" />
               </Link>
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2 rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-neon-blue"
+                className="p-2 rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition-colors focus:outline-none"
+                aria-label="Toggle menu"
               >
                 {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
@@ -91,29 +92,31 @@ export function Layout() {
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-x-0 top-16 z-40 glass-panel border-b border-glass-border md:hidden"
+            className="fixed inset-x-0 top-16 z-40 md:hidden"
           >
-            <div className="px-2 pt-2 pb-3 space-y-1">
-              {navItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-3 rounded-xl text-base font-medium",
-                    location.pathname === item.path
-                      ? "bg-neon-blue/10 text-white border border-neon-blue/30"
-                      : "text-gray-300 hover:bg-white/5 hover:text-white"
-                  )}
-                >
-                  <item.icon className={cn("w-5 h-5", location.pathname === item.path ? "text-neon-blue" : "text-gray-400")} />
-                  {item.name}
-                </Link>
-              ))}
+            <div className="bg-dark-surface/98 backdrop-blur-xl border-b border-glass-border shadow-2xl">
+              <div className="px-4 py-4 space-y-2">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium transition-all",
+                      location.pathname === item.path
+                        ? "bg-neon-blue/15 text-white border border-neon-blue/40 shadow-lg"
+                        : "text-gray-300 hover:bg-white/5 hover:text-white"
+                    )}
+                  >
+                    <item.icon className={cn("w-5 h-5", location.pathname === item.path ? "text-neon-blue" : "text-gray-400")} />
+                    {item.name}
+                  </Link>
+                ))}
+              </div>
             </div>
           </motion.div>
         )}

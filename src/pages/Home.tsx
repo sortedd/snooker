@@ -16,8 +16,8 @@ export function Home() {
   // Upcoming matches
   const upcomingMatches = matches.filter(m => m.status === 'pending' && m.player1Id && m.player2Id).slice(0, 3);
   
-  // Recent results
-  const recentMatches = matches.filter(m => m.status === 'completed').reverse().slice(0, 3);
+  // ALL completed matches - show them prominently
+  const completedMatches = matches.filter(m => m.status === 'completed').reverse();
 
   return (
     <div className="flex-1 w-full max-w-[2000px] mx-auto pb-20">
@@ -155,27 +155,27 @@ export function Home() {
         <div className="space-y-8">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-display font-bold uppercase flex items-center gap-2 text-white">
-              <Trophy className="text-neon-green w-6 h-6" /> Recent Results
+              <Trophy className="text-neon-green w-6 h-6" /> Match Results
             </h2>
+            <span className="text-sm text-gray-400">{completedMatches.length} completed</span>
           </div>
           
           <div className="space-y-4">
-            {recentMatches.length > 0 ? (
-              recentMatches.map((match, i) => {
+            {completedMatches.length > 0 ? (
+              completedMatches.map((match, i) => {
                 const p1 = getPlayer(match.player1Id);
                 const p2 = getPlayer(match.player2Id);
                 const isP1Winner = match.winnerId === p1?.id;
                 
                 return (
-                  <motion.div
+                  <Link
                     key={match.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    className="glass-panel p-4 rounded-xl flex flex-col gap-3 hover:bg-white/5 transition-colors"
+                    to={`/match/${match.id}`}
+                    className="block glass-panel p-4 rounded-xl flex flex-col gap-3 hover:bg-white/5 hover:border-neon-green/30 transition-all cursor-pointer group"
                   >
                     <div className="text-xs text-gray-500 uppercase flex justify-between">
                       <span>{match.round}</span>
+                      <span className="text-neon-green">Completed</span>
                     </div>
                     
                     <div className="space-y-2">
@@ -197,7 +197,31 @@ export function Home() {
                         <span className="text-lg font-mono tracking-tighter font-bold">{match.scoreP2}</span>
                       </div>
                     </div>
-                  </motion.div>
+
+                    {/* Game breakdown */}
+                    {match.games && match.games.length > 0 && (
+                      <div className="pt-2 border-t border-glass-border mt-2">
+                        <div className="text-[10px] text-gray-500 uppercase mb-1">Games:</div>
+                        <div className="flex gap-1 flex-wrap">
+                          {match.games.map((game) => {
+                            const gameWinner = game.winnerId === p1?.id ? 'p1' : 'p2';
+                            return (
+                              <span
+                                key={game.gameNumber}
+                                className={`text-[10px] px-2 py-1 rounded ${
+                                  gameWinner === 'p1' 
+                                    ? 'bg-neon-blue/20 text-neon-blue' 
+                                    : 'bg-purple-500/20 text-purple-400'
+                                }`}
+                              >
+                                G{game.gameNumber}: {gameWinner === 'p1' ? p1?.name : p2?.name}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </Link>
                 );
               })
             ) : (
