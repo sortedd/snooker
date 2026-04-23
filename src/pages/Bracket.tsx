@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 import { Match, Player } from '../data/initialData';
 import { Link } from 'react-router-dom';
+import { Play, Circle } from 'lucide-react';
 
 function MatchNode({ match, players, isFinal }: { match?: Match, players: Player[], isFinal?: boolean }) {
   if (!match) return <div className="hidden"></div>;
@@ -43,28 +44,50 @@ function MatchNode({ match, players, isFinal }: { match?: Match, players: Player
 
   return (
     <Link to={`/match/${match.id}`} className={cn(
-      "w-48 xl:w-56 glass-panel rounded-lg overflow-hidden relative group transition-all",
+      "block w-48 xl:w-56 glass-panel rounded-lg overflow-hidden relative group transition-all cursor-pointer",
       isFinal ? "w-56 xl:w-64 border-neon-blue/40 shadow-[0_0_15px_rgba(0,240,255,0.1)]" : "",
       match.status === 'completed' 
-        ? "border-neon-green/50 hover:border-neon-green shadow-[0_0_10px_rgba(74,222,128,0.2)]" 
-        : "hover:border-neon-blue/50"
+        ? "border-neon-green/50 hover:border-neon-green shadow-[0_0_10px_rgba(74,222,128,0.2)] hover:shadow-[0_0_20px_rgba(74,222,128,0.3)]" 
+        : match.videoUrls && match.videoUrls.length > 0
+        ? "border-neon-blue/50 hover:border-neon-blue shadow-[0_0_10px_rgba(0,240,255,0.15)] hover:shadow-[0_0_20px_rgba(0,240,255,0.3)]"
+        : "hover:border-neon-blue/50 hover:shadow-[0_0_15px_rgba(0,240,255,0.15)]"
     )}>
+      {/* Video Available Badge */}
+      {match.videoUrls && match.videoUrls.length > 0 && (
+        <div className="absolute top-1 left-1 z-20 bg-neon-blue/90 text-black text-[8px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1">
+          <Play className="w-2 h-2 fill-current" />
+          VIDEO
+        </div>
+      )}
+      
       {isFinal && (
         <div className="bg-neon-blue/20 text-neon-blue text-[10px] font-bold text-center py-1 uppercase tracking-wider relative z-10">
           Championship Title
         </div>
       )}
-      <div className="relative z-10 bg-black/50">
+      <div className="relative z-10 bg-black/50 group-hover:bg-black/70 transition-colors">
         {getPlayerDisplay(p1, match.scoreP1, match.winnerId === p1?.id)}
         {getPlayerDisplay(p2, match.scoreP2, match.winnerId === p2?.id)}
       </div>
       
+      {/* Hover overlay with play icon for matches with videos */}
+      {match.videoUrls && match.videoUrls.length > 0 && (
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
+          <div className="bg-neon-blue/90 rounded-full p-3 shadow-lg">
+            <Play className="w-6 h-6 text-black fill-current" />
+          </div>
+        </div>
+      )}
+      
       {/* Status indicators */}
       {match.status === 'pending' && match.player1Id && match.player2Id && (
-         <div className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-yellow-500 shadow-[0_0_5px_rgba(234,179,8,0.5)] z-20" />
+         <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.8)] z-20" title="Upcoming" />
       )}
       {match.status === 'completed' && (
-         <div className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-neon-green shadow-[0_0_5px_rgba(74,222,128,0.8)] z-20" />
+         <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-neon-green shadow-[0_0_8px_rgba(74,222,128,0.8)] z-20" title="Completed" />
+      )}
+      {match.status === 'live' && (
+         <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)] z-20 animate-pulse" title="Live" />
       )}
     </Link>
   );
@@ -92,6 +115,14 @@ export function Bracket() {
         >
           Tournament <span className="text-neon-blue">Bracket</span>
         </motion.h1>
+        <motion.p 
+           initial={{ opacity: 0 }}
+           animate={{ opacity: 1 }}
+           transition={{ delay: 0.2 }}
+           className="text-gray-400 text-sm mt-2"
+        >
+          Click on any match to view details and watch videos
+        </motion.p>
       </div>
 
       {/* Bracket container with horizontal scrolling for mobile */}

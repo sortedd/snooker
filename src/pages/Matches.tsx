@@ -50,10 +50,25 @@ export function Matches() {
                   >
                     <Link
                       to={`/match/${match.id}`}
-                      className={`block group relative aspect-video rounded-xl overflow-hidden glass-panel ${
-                        isPlaceholder ? 'pointer-events-none opacity-50 block' : ''
+                      className={`block group relative aspect-video rounded-xl overflow-hidden glass-panel transition-all ${
+                        isPlaceholder ? 'pointer-events-none opacity-50' : 'hover:border-neon-blue/50 hover:shadow-[0_0_20px_rgba(0,240,255,0.2)] cursor-pointer'
                       }`}
                     >
+                      {/* Video Available Badge */}
+                      {!isPlaceholder && match.videoUrls && match.videoUrls.length > 0 && (
+                        <div className="absolute top-3 left-3 z-20 bg-neon-blue/90 text-black text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
+                          <Play className="w-3 h-3 fill-current" />
+                          {match.videoUrls.length} VIDEO{match.videoUrls.length > 1 ? 'S' : ''}
+                        </div>
+                      )}
+                      
+                      {/* Status Badge */}
+                      {!isPlaceholder && match.status === 'completed' && (
+                        <div className="absolute top-3 right-3 z-20 bg-neon-green/90 text-black text-[10px] font-bold px-2 py-1 rounded">
+                          COMPLETED
+                        </div>
+                      )}
+                      
                       {/* Thumbnail background logic */}
                       <div className="absolute inset-0 bg-dark-surface">
                         {p1 && p2 && (
@@ -67,9 +82,9 @@ export function Matches() {
 
                       {/* Content */}
                       <div className="absolute inset-0 p-4 flex flex-col justify-end">
-                        {!isPlaceholder && (
-                          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-neon-blue/80 text-black flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300">
-                            <Play className="w-5 h-5 fill-current ml-1" />
+                        {!isPlaceholder && match.videoUrls && match.videoUrls.length > 0 && (
+                          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-neon-blue/90 text-black flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300 shadow-lg">
+                            <Play className="w-6 h-6 fill-current ml-1" />
                           </div>
                         )}
                         
