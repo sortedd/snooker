@@ -1,0 +1,96 @@
+═══════════════════════════════════════════════════════════════════════
+  REAL-TIME SYNC SOLUTIONS FOR TOURNAMENT APP
+═══════════════════════════════════════════════════════════════════════
+
+CURRENT SITUATION:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ Auto-refresh every 5 seconds
+✅ Manual refresh button
+✅ Cross-tab sync (same device)
+✅ localStorage persistence
+❌ Cross-device sync requires external service
+
+═══════════════════════════════════════════════════════════════════════
+
+THE REALITY:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+localStorage and IndexedDB are DEVICE-SPECIFIC by design.
+They cannot sync across different phones/computers without:
+
+1. A server/database (Supabase, Firebase, MongoDB, etc.)
+2. Or manual data export/import
+
+═══════════════════════════════════════════════════════════════════════
+
+YOUR OPTIONS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+OPTION 1: Keep Current Setup (RECOMMENDED)
+────────────────────────────────────────────────────────────────────
+✅ No external dependencies
+✅ Works perfectly on single device
+✅ Auto-refresh every 5 seconds
+✅ Manual refresh button for instant sync
+✅ Fast and reliable
+
+HOW TO USE:
+- Admin updates scores on desktop
+- Viewers on mobile click refresh button OR wait 5 seconds
+- Data syncs automatically
+
+COST: $0/month
+
+
+OPTION 2: Add Simple Backend (SQLite on Server)
+────────────────────────────────────────────────────────────────────
+✅ True real-time sync
+✅ All devices see same data instantly
+✅ Persistent storage
+
+REQUIRES:
+- VPS/Cloud server ($5-10/month)
+- Or Railway/Render free tier (with limitations)
+- Express + SQLite backend
+- API endpoints for CRUD
+
+COST: $0-10/month
+
+
+OPTION 3: Use Existing Supabase (Already Installed!)
+────────────────────────────────────────────────────────────────────
+You already have @supabase/supabase-js installed!
+
+✅ Real-time sync out of the box
+✅ Free tier: 500MB database
+✅ No server needed
+✅ Works immediately
+
+SETUP TIME: 15 minutes
+COST: FREE (up to 500MB)
+
+═══════════════════════════════════════════════════════════════════════
+
+RECOMMENDATION:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+For your snooker tournament app, OPTION 1 is PERFECT because:
+
+1. Tournament admin updates from ONE device (desktop)
+2. Viewers check from phones/tablets
+3. 5-second auto-sync is fast enough
+4. Manual refresh button for instant updates
+5. No cost, no complexity, no external dependencies
+
+═══════════════════════════════════════════════════════════════════════
+
+CURRENT IMPLEMENTATION STATUS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ Auto-refresh every 5 seconds (Layout.tsx)
+✅ Manual refresh button with spinner (Layout.tsx)
+✅ Cross-tab sync using storage events (Layout.tsx)
+✅ localStorage persistence (useTournamentStore.ts)
+✅ Vercel routing fixed (vercel.json)
+
+═══════════════════════════════════════════════════════════════════════
