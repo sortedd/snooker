@@ -7,6 +7,8 @@ interface TournamentState {
   addGameScore: (matchId: string, gameNumber: number, winnerId: string, scoreP1: number, scoreP2: number) => void;
   updateMatchVideos: (matchId: string, videoUrls: string[]) => void;
   resetTournament: () => void;
+  refreshData: () => void;
+  lastUpdated: number;
 }
 
 // Load from localStorage or use initial data
@@ -138,8 +140,20 @@ export const useTournamentStore = create<TournamentState>((set, get) => {
       localStorage.removeItem('snooker-tournament');
       set({
         players: initialPlayers,
-        matches: [...initialMatches]
+        matches: [...initialMatches],
+        lastUpdated: Date.now()
       });
-    }
+    },
+    
+    refreshData: () => {
+      const updated = loadFromStorage();
+      set({
+        players: updated.players,
+        matches: updated.matches,
+        lastUpdated: Date.now()
+      });
+    },
+    
+    lastUpdated: Date.now()
   };
 });

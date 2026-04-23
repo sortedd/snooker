@@ -1,12 +1,43 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, X, Trophy, Tv, Users, LayoutDashboard, Settings } from 'lucide-react';
-import { useState } from 'react';
+import { Menu, X, Trophy, Tv, Users, LayoutDashboard, Settings, RefreshCw } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { cn } from '../lib/utils';
+import { useTournamentStore } from '../store/useTournamentStore';
 
 export function Layout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const location = useLocation();
+  const refreshData = useTournamentStore((state) => state.refreshData);
+  const lastUpdated = useTournamentStore((state) => state.lastUpdated);
+
+  // Auto-refresh every 5 seconds to sync data across devices
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshData();
+    }, 5000); // Refresh every 5 seconds
+    
+    return () => clearInterval(interval);
+  }, [refreshData]);
+
+  // Listen for storage changes (when data is updated in another tab)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'snooker-tournament') {
+        refreshData();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [refreshData]);
+
+  const handleManualRefresh = () => {
+    setIsRefreshing(true);
+    refreshData();
+    setTimeout(() => setIsRefreshing(false), 1000);
+  };
 
   const navItems = [
     { name: 'Live & Home', path: '/', icon: Tv },
@@ -66,6 +97,19 @@ export function Layout() {
               ))}
               
               <div className="w-px h-6 bg-glass-border mx-2" />
+              
+              {/* Refresh Button */}
+              <button
+                onClick={handleManualRefresh}
+                className={cn(
+                  "p-2 text-gray-400 hover:text-neon-blue transition-all",
+                  isRefreshing && "animate-spin text-neon-blue"
+                )}
+                title="Refresh data"
+              >
+                <RefreshCw className="w-5 h-5" />
+              </button>
+              
               <Link to="/admin" className="p-2 text-gray-400 hover:text-neon-green transition-colors">
                 <Settings className="w-5 h-5" />
               </Link>
@@ -73,6 +117,19 @@ export function Layout() {
 
             {/* Mobile menu button */}
             <div className="md:hidden flex items-center gap-2">
+              {/* Refresh Button */}
+              <button
+                onClick={handleManualRefresh}
+                className={cn(
+                  "p-2 text-gray-400 hover:text-neon-blue transition-all",
+                  isRefreshing && "animate-spin text-neon-blue"
+                )}
+                title="Refresh data"
+                aria-label="Refresh data"
+              >
+                <RefreshCw className="w-5 h-5" />
+              </button>
+              
               <Link to="/admin" className="p-2 text-gray-400 hover:text-neon-green transition-colors">
                 <Settings className="w-5 h-5" />
               </Link>
