@@ -15,6 +15,7 @@ interface TournamentState {
 // Fetch from JSONBin (cloud storage)
 const fetchFromCloud = async (): Promise<{ players: Player[]; matches: Match[] } | null> => {
   try {
+    console.log('🔄 Fetching from JSONBin...');
     const response = await fetch(`${JSONBIN_CONFIG.BASE_URL}/${JSONBIN_CONFIG.BIN_ID}/latest`, {
       method: 'GET',
       headers: {
@@ -22,10 +23,19 @@ const fetchFromCloud = async (): Promise<{ players: Player[]; matches: Match[] }
       }
     });
     
+    console.log('JSONBin response status:', response.status);
+    
     if (response.ok) {
       const data = await response.json();
+      console.log('JSONBin data received:', data);
       // JSONBin v3 wraps data in 'record' property
-      return data.record || null;
+      const record = data.record || data;
+      if (record && record.players && record.matches) {
+        console.log('✅ Successfully loaded from JSONBin');
+        return record;
+      }
+    } else {
+      console.error('JSONBin fetch failed:', response.statusText);
     }
   } catch (e) {
     console.error('Failed to fetch from JSONBin:', e);
@@ -36,7 +46,8 @@ const fetchFromCloud = async (): Promise<{ players: Player[]; matches: Match[] }
 // Save to JSONBin (cloud storage)
 const saveToCloud = async (players: Player[], matches: Match[]) => {
   try {
-    await fetch(`${JSONBIN_CONFIG.BASE_URL}/${JSONBIN_CONFIG.BIN_ID}`, {
+    console.log('💾 Saving to JSONBin...', { playersCount: players.length, matchesCount: matches.length });
+    const response = await fetch(`${JSONBIN_CONFIG.BASE_URL}/${JSONBIN_CONFIG.BIN_ID}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -44,6 +55,14 @@ const saveToCloud = async (players: Player[], matches: Match[]) => {
       },
       body: JSON.stringify({ players, matches })
     });
+    
+    console.log('JSONBin save response:', response.status, response.statusText);
+    
+    if (response.ok) {
+      console.log('✅ Successfully saved to JSONBin');
+    } else {
+      console.error('Failed to save to JSONBin:', response.statusText);
+    }
   } catch (e) {
     console.error('Failed to save to JSONBin:', e);
   }

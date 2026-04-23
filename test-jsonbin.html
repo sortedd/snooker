@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JSONBin Test</title>
+</head>
+<body>
+    <h1>JSONBin Connection Test</h1>
+    <div id="result">Testing...</div>
+    
+    <script>
+        const BIN_ID = '69ea1a3f856a68218964bc54';
+        const API_KEY = '$2a$10$SH6/8AkdZeXR49llh/qM/O/0ZvUCtCRmbfPHFHQBk38Dh/.UtfzJ2';
+        const BASE_URL = 'https://api.jsonbin.io/v3/b';
+        
+        async function testJSONBin() {
+            const resultDiv = document.getElementById('result');
+            
+            // Test 1: Fetch from JSONBin
+            try {
+                resultDiv.innerHTML += '<br><br>🔄 Testing FETCH...';
+                
+                // Try different authentication methods
+                const headers1 = {
+                    'X-Master-Key': API_KEY
+                };
+                
+                const headers2 = {
+                    'X-Access-Key': API_KEY
+                };
+                
+                // Method 1: X-Master-Key
+                let response = await fetch(`${BASE_URL}/${BIN_ID}/latest`, {
+                    method: 'GET',
+                    headers: headers1
+                });
+                
+                resultDiv.innerHTML += `<br>Method 1 (X-Master-Key): ${response.status}`;
+                
+                if (!response.ok) {
+                    // Method 2: X-Access-Key
+                    response = await fetch(`${BASE_URL}/${BIN_ID}/latest`, {
+                        method: 'GET',
+                        headers: headers2
+                    });
+                    resultDiv.innerHTML += `<br>Method 2 (X-Access-Key): ${response.status}`;
+                }
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML += '<br>✅ FETCH SUCCESS!';
+                    resultDiv.innerHTML += '<br>Data: ' + JSON.stringify(data).substring(0, 300);
+                    
+                    // Test 2: Save to JSONBin
+                    resultDiv.innerHTML += '<br><br>🔄 Testing SAVE...';
+                    const testData = {
+                        players: [{ id: 'test', name: 'Test Player' }],
+                        matches: []
+                    };
+                    
+                    // Try both auth methods for save
+                    let saveResponse = await fetch(`${BASE_URL}/${BIN_ID}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Master-Key': API_KEY
+                        },
+                        body: JSON.stringify(testData)
+                    });
+                    
+                    resultDiv.innerHTML += `<br>Save Method 1: ${saveResponse.status} ${saveResponse.statusText}`;
+                    
+                    if (!saveResponse.ok) {
+                        saveResponse = await fetch(`${BASE_URL}/${BIN_ID}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-Access-Key': API_KEY
+                            },
+                            body: JSON.stringify(testData)
+                        });
+                        resultDiv.innerHTML += `<br>Save Method 2: ${saveResponse.status} ${saveResponse.statusText}`;
+                    }
+                    
+                    if (saveResponse.ok) {
+                        resultDiv.innerHTML += '<br>✅ SAVE SUCCESS!';
+                        
+                        // Test 3: Fetch again to verify
+                        resultDiv.innerHTML += '<br><br>🔄 Verifying save...';
+                        let verifyResponse = await fetch(`${BASE_URL}/${BIN_ID}/latest`, {
+                            method: 'GET',
+                            headers: {
+                                'X-Master-Key': API_KEY
+                            }
+                        });
+                        
+                        if (!verifyResponse.ok) {
+                            verifyResponse = await fetch(`${BASE_URL}/${BIN_ID}/latest`, {
+                                method: 'GET',
+                                headers: {
+                                    'X-Access-Key': API_KEY
+                                }
+                            });
+                        }
+                        
+                        if (verifyResponse.ok) {
+                            const verifyData = await verifyResponse.json();
+                            resultDiv.innerHTML += '<br>✅ VERIFICATION SUCCESS!';
+                            resultDiv.innerHTML += '<br>Verified Data: ' + JSON.stringify(verifyData).substring(0, 200);
+                            resultDiv.innerHTML += '<br><br>🎉 ALL TESTS PASSED! JSONBin is working!';
+                        }
+                    } else {
+                        resultDiv.innerHTML += '<br>❌ SAVE FAILED';
+                    }
+                } else {
+                    resultDiv.innerHTML += '<br>❌ FETCH FAILED: ' + response.statusText;
+                }
+            } catch (error) {
+                resultDiv.innerHTML += '<br>❌ ERROR: ' + error.message;
+                console.error('Test error:', error);
+            }
+        }
+        
+        testJSONBin();
+    </script>
+</body>
+</html>
