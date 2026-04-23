@@ -1,0 +1,6 @@
+{
+  "name": "Ace Snooker",
+  "description": "A premium, mobile-first snooker tournament platform featuring interactive brackets, real-time match updates, and immersive player profiles.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["firebase"]
+}
